@@ -72,8 +72,10 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
             }
             State::OutsideBlock { index } => {
                 if let Ok((remaining, (name, attributes))) = parse_start_tag(&input[index..]) {
-                    if !input[..index].is_empty() {
-                        buffer.push(Section::Raw(Cow::Borrowed(&input[..index])));
+                    let content = input[..index].trim_start_matches(['\n', '\r']).trim_end();
+
+                    if !content.is_empty() {
+                        buffer.push(Section::Raw(Cow::Borrowed(content)));
                     }
 
                     state = State::InsideBlock {
@@ -101,10 +103,14 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
                         name, attributes, ..
                     } = std::mem::replace(&mut state, State::OutsideBlock { index: 0 })
                     {
+                        let content = Cow::Borrowed(
+                            input[..index].trim_start_matches(['\n', '\r']).trim_end(),
+                        );
+
                         buffer.push(Section::Block(Block {
                             name,
                             attributes,
-                            content: Cow::Borrowed(&input[..index]),
+                            content,
                         }));
                     }
 
@@ -123,8 +129,10 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
                 } else if let State::InsideBlock { name, .. } = state {
                     return Err(ParseError::MissingEndTag(name.as_str().to_owned()));
                 } else {
+                    let content = input.trim_start_matches(['\n', '\r']).trim_end();
+
                     if !input.is_empty() {
-                        buffer.push(Section::Raw(Cow::Borrowed(input)));
+                        buffer.push(Section::Raw(Cow::Borrowed(content)));
                     }
 
                     return Ok(buffer);
