@@ -9,7 +9,7 @@ mod name;
 /// A block as defined in the [SFC specifications][1].
 ///
 /// [1]: https://v3.vuejs.org/api/sfc-spec.html#language-blocks
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Block<'a> {
     pub name: Name<'a>,
     pub attributes: Vec<(AttributeName<'a>, Option<AttributeValue<'a>>)>,

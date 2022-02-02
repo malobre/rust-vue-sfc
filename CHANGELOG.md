@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `AttributeName`, `AttributeValue` and `BlockName` now implements `PartialOrd`, `Ord` and `Default`.
+- `Section` and `Block` now implements `PartialOrd`, `Ord` and `Hash`.
+
 ### Fixed
 
 - Fix nested tags parsing.

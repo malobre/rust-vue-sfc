@@ -3,7 +3,7 @@ use std::{borrow::Cow, fmt::Display};
 use crate::Block;
 
 /// A Vue SFC section.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Section<'a> {
     /// Represent any data before, after or between blocks.
     Raw(Cow<'a, str>),

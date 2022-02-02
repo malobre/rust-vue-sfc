@@ -7,7 +7,7 @@ use std::{
 use crate::ast::error::IllegalChar;
 
 /// The name of an attribute, i.e: `lang` in `<script lang="ts">`.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct Name<'a>(Cow<'a, str>);
 
 impl<'a> Name<'a> {

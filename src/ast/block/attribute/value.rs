@@ -7,7 +7,7 @@ use std::{
 use crate::ast::error::IllegalChar;
 
 /// The value of an attribute, i.e: `ts` in `<script lang="ts">`.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct Value<'a>(Cow<'a, str>);
 
 impl<'a> Value<'a> {
