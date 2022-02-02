@@ -1,7 +1,9 @@
 use std::{borrow::Cow, fmt::Display};
 
-pub use self::attribute::{Attribute, AttributeName, AttributeValue};
-pub use self::name::BlockName;
+pub use self::attribute::{
+    Attribute, AttributeName, AttributeValue, InvalidAttributeName, InvalidAttributeValue,
+};
+pub use self::name::{BlockName, InvalidBlockName};
 
 mod attribute;
 mod name;

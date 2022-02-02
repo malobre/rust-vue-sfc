@@ -12,12 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `AttributeName::from_cow_unchecked`.
 - Added `AttributeValue::from_cow_unchecked`.
 - Added `BlockName::from_cow_unchecked`.
+- Added errors:
+  - `ast::InvalidBlockName`,
+  - `ast::InvalidAttributeName`,
+  - `ast::InvalidAttributeValue`,
+  - `error::Error`.
 
 ### Removed
 
 - Removed `AttributeName::new`.
 - Removed `AttributeValue::new`.
 - Removed `BlockName::new`.
+- Removed `IllegalCharError`.
+- Removed re-export of `ParseError`.
 
 ### Changed
 

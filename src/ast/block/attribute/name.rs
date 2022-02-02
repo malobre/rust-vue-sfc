@@ -4,7 +4,25 @@ use std::{
     ops::Deref,
 };
 
-use crate::ast::error::IllegalChar;
+pub use self::error::InvalidAttributeName;
+
+mod error {
+    use std::error::Error;
+    use std::fmt::Display;
+
+    /// Returned when a function was unable to convert a string to an
+    /// [`AttributeName`][super::AttributeName].
+    #[derive(Debug)]
+    pub struct InvalidAttributeName(pub(super) char);
+
+    impl Display for InvalidAttributeName {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "illegal char: `{}`", self.0)
+        }
+    }
+
+    impl Error for InvalidAttributeName {}
+}
 
 /// The name of an attribute, i.e: `lang` in `<script lang="ts">`.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -22,7 +40,7 @@ impl<'a> AttributeName<'a> {
     /// - `U+002F SOLIDUS (/)`
     /// - `U+003D EQUAL SIGN (=)`
     /// - `U+003E GREATER-THAN SIGN (>)`.
-    pub fn from_cow(mut src: Cow<'a, str>) -> Result<Self, IllegalChar> {
+    pub fn from_cow(mut src: Cow<'a, str>) -> Result<Self, InvalidAttributeName> {
         if let Some(ch) = src.chars().find(|ch| {
             matches!(
                 ch,
@@ -35,7 +53,7 @@ impl<'a> AttributeName<'a> {
                     | '\u{003E}'
             )
         }) {
-            return Err(IllegalChar(ch));
+            return Err(InvalidAttributeName(ch));
         }
 
         if src.contains(|ch: char| ch.is_ascii_uppercase()) {
@@ -88,21 +106,21 @@ impl Display for AttributeName<'_> {
 }
 
 impl<'a> TryFrom<&'a str> for AttributeName<'a> {
-    type Error = IllegalChar;
+    type Error = InvalidAttributeName;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         Self::from_cow(Cow::Borrowed(value))
     }
 }
 
 impl<'a> TryFrom<String> for AttributeName<'a> {
-    type Error = IllegalChar;
+    type Error = InvalidAttributeName;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_cow(Cow::Owned(value))
     }
 }
 
 impl<'a> TryFrom<Cow<'a, str>> for AttributeName<'a> {
-    type Error = IllegalChar;
+    type Error = InvalidAttributeName;
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         Self::from_cow(value)
     }

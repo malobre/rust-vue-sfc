@@ -23,10 +23,12 @@
 //! [`Block`] and [`Section`] implement [`std::fmt::Display`].
 //! Note that, when printing, [`Section::Raw`] are end-trimmed.
 
-pub use self::ast::{
-    Attribute, AttributeName, AttributeValue, Block, BlockName, IllegalCharError, Section,
-};
-pub use self::parser::{parse, ParseError};
+#[doc(no_inline)]
+pub use self::ast::{Attribute, AttributeName, AttributeValue, Block, BlockName, Section};
+pub use self::error::Error;
+#[doc(no_inline)]
+pub use self::parser::parse;
 
-mod ast;
-mod parser;
+pub mod ast;
+mod error;
+pub mod parser;

@@ -4,28 +4,37 @@ use std::{
     ops::Deref,
 };
 
-#[derive(Debug)]
-pub struct InvalidBlockName {
-    kind: InvalidBlockNameKind,
-}
+pub use self::error::InvalidBlockName;
+use self::error::InvalidBlockNameKind;
 
-impl std::fmt::Display for InvalidBlockName {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.kind {
-            InvalidBlockNameKind::StartsWithNonAsciiAlpha => {
-                write!(f, "block name must start with ASCII alpha")
+mod error {
+    use std::error::Error;
+    use std::fmt::Display;
+
+    /// Returned when a function was unable to convert a string to a [`BlockName`][super::BlockName].
+    #[derive(Debug)]
+    pub struct InvalidBlockName(pub(super) InvalidBlockNameKind);
+
+    impl Display for InvalidBlockName {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Self(InvalidBlockNameKind::StartsWithNonAsciiAlpha) => {
+                    write!(f, "block name must start with ASCII alpha")
+                }
+                Self(InvalidBlockNameKind::IllegalChar(ch)) => {
+                    write!(f, "block name cannot contain `{}`", ch)
+                }
             }
-            InvalidBlockNameKind::IllegalChar(ch) => write!(f, "block name cannot contain `{}`", ch),
         }
     }
-}
 
-impl std::error::Error for InvalidBlockName {}
+    impl Error for InvalidBlockName {}
 
-#[derive(Debug)]
-enum InvalidBlockNameKind {
-    IllegalChar(char),
-    StartsWithNonAsciiAlpha,
+    #[derive(Debug)]
+    pub(super) enum InvalidBlockNameKind {
+        IllegalChar(char),
+        StartsWithNonAsciiAlpha,
+    }
 }
 
 /// The name of a block, i.e: `script` in `<script lang="ts">`.
@@ -45,9 +54,9 @@ impl<'a> BlockName<'a> {
     /// - `U+003E GREATER-THAN SIGN (>)`.
     pub fn from_cow(mut src: Cow<'a, str>) -> Result<Self, InvalidBlockName> {
         if !src.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
-            return Err(InvalidBlockName {
-                kind: InvalidBlockNameKind::StartsWithNonAsciiAlpha,
-            });
+            return Err(InvalidBlockName(
+                InvalidBlockNameKind::StartsWithNonAsciiAlpha,
+            ));
         }
 
         if let Some(ch) = src.chars().find(|ch| {
@@ -56,9 +65,7 @@ impl<'a> BlockName<'a> {
                 '\u{0009}' | '\u{000A}' | '\u{000C}' | '\u{0020}' | '\u{002F}' | '\u{003E}'
             )
         }) {
-            return Err(InvalidBlockName {
-                kind: InvalidBlockNameKind::IllegalChar(ch),
-            });
+            return Err(InvalidBlockName(InvalidBlockNameKind::IllegalChar(ch)));
         }
 
         if src.contains(|ch: char| ch.is_ascii_uppercase()) {

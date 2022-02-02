@@ -4,7 +4,25 @@ use std::{
     ops::Deref,
 };
 
-use crate::ast::error::IllegalChar;
+pub use self::error::InvalidAttributeValue;
+
+mod error {
+    use std::error::Error;
+    use std::fmt::Display;
+
+    /// Returned when a function was unable to convert a string to an
+    /// [`AttributeValue`][super::AttributeValue].
+    #[derive(Debug)]
+    pub struct InvalidAttributeValue(pub(super) char);
+
+    impl Display for InvalidAttributeValue {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "illegal char: `{}`", self.0)
+        }
+    }
+
+    impl Error for InvalidAttributeValue {}
+}
 
 /// The value of an attribute, i.e: `ts` in `<script lang="ts">`.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -16,10 +34,10 @@ impl<'a> AttributeValue<'a> {
     /// # Errors
     /// Will return an error if the string contains both
     /// a `U+0022 QUOTATION MARK (")` and an `U+0027 APOSTROPHE (')`.
-    pub fn from_cow(src: Cow<'a, str>) -> Result<Self, IllegalChar> {
+    pub fn from_cow(src: Cow<'a, str>) -> Result<Self, InvalidAttributeValue> {
         if src.contains('\u{0022}') {
             if src.contains('\u{0027}') {
-                return Err(IllegalChar('\u{0027}'));
+                return Err(InvalidAttributeValue('\u{0027}'));
             }
 
             return Ok(Self(src));
@@ -69,21 +87,21 @@ impl Display for AttributeValue<'_> {
 }
 
 impl<'a> TryFrom<Cow<'a, str>> for AttributeValue<'a> {
-    type Error = IllegalChar;
+    type Error = InvalidAttributeValue;
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         Self::from_cow(value)
     }
 }
 
 impl<'a> TryFrom<&'a str> for AttributeValue<'a> {
-    type Error = IllegalChar;
+    type Error = InvalidAttributeValue;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         Self::from_cow(Cow::Borrowed(value))
     }
 }
 
 impl<'a> TryFrom<String> for AttributeValue<'a> {
-    type Error = IllegalChar;
+    type Error = InvalidAttributeValue;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_cow(Cow::Owned(value))
     }
