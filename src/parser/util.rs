@@ -14,10 +14,10 @@ use nom::{
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#end-tag-open-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state>
-pub fn parse_end_tag<'a, 'b>(name: &'b str, input: &'a str) -> IResult<&'a str, &'a str> {
+pub fn parse_end_tag<'a, 'b>(name: &BlockName<'b>, input: &'a str) -> IResult<&'a str, &'a str> {
     delimited(
         tuple((char('<'), char('/'), multispace0)),
-        tag_no_case(name),
+        tag_no_case(name.as_str()),
         tuple((multispace0, char('>'))),
     )
     .parse(input)
