@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{Attribute, AttributeName, AttributeValue, BlockName};
 
 use nom::{
@@ -81,7 +83,7 @@ fn parse_start_tag_attribute_name(input: &str) -> IResult<&str, AttributeName> {
                 | '\u{003E}'
         )
     })
-    .map(|str| unsafe { AttributeName::from_str_unchecked(str) })
+    .map(|str| unsafe { AttributeName::from_cow_unchecked(Cow::Borrowed(str)) })
     .parse(input)
 }
 

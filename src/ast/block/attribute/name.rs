@@ -22,7 +22,7 @@ impl<'a> AttributeName<'a> {
     /// - `U+002F SOLIDUS (/)`
     /// - `U+003D EQUAL SIGN (=)`
     /// - `U+003E GREATER-THAN SIGN (>)`.
-    pub fn from_str(src: &'a str) -> Result<Self, IllegalChar> {
+    pub fn from_cow(mut src: Cow<'a, str>) -> Result<Self, IllegalChar> {
         if let Some(ch) = src.chars().find(|ch| {
             matches!(
                 ch,
@@ -39,23 +39,25 @@ impl<'a> AttributeName<'a> {
         }
 
         if src.contains(|ch: char| ch.is_ascii_uppercase()) {
-            Ok(Self(Cow::Owned(src.to_ascii_uppercase())))
+            src.to_mut().make_ascii_lowercase();
+
+            Ok(Self(src))
         } else {
-            Ok(Self(Cow::Borrowed(src)))
+            Ok(Self(src))
         }
     }
 
     /// Convert a string into an [`AttributeName`] **without** validating.
-    pub unsafe fn from_str_unchecked(src: &'a str) -> Self {
+    pub unsafe fn from_cow_unchecked(src: Cow<'a, str>) -> Self {
         if cfg!(debug_assertions) {
-            match Self::from_str(src) {
+            match Self::from_cow(src) {
                 Ok(val) => val,
-                Err(_) => {
-                    panic!("AttributeName::from_str_unchecked() with illegal chars")
+                Err(err) => {
+                    panic!("AttributeName::from_cow_unchecked(): {err}")
                 }
             }
         } else {
-            Self(Cow::Borrowed(src))
+            Self(src)
         }
     }
 
@@ -88,13 +90,20 @@ impl Display for AttributeName<'_> {
 impl<'a> TryFrom<&'a str> for AttributeName<'a> {
     type Error = IllegalChar;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
-        Self::from_str(value)
+        Self::from_cow(Cow::Borrowed(value))
     }
 }
 
-impl<'a> TryFrom<&'a String> for AttributeName<'a> {
+impl<'a> TryFrom<String> for AttributeName<'a> {
     type Error = IllegalChar;
-    fn try_from(value: &'a String) -> Result<Self, Self::Error> {
-        Self::from_str(&value)
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::from_cow(Cow::Owned(value))
+    }
+}
+
+impl<'a> TryFrom<Cow<'a, str>> for AttributeName<'a> {
+    type Error = IllegalChar;
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        Self::from_cow(value)
     }
 }
