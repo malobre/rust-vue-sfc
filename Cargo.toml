@@ -1,0 +1,14 @@
+[package]
+name = "vue-sfc"
+description = "A parser for Vue SFC."
+version = "0.1.0"
+authors = ["Maël Obréjan <mael.obrejan@protonmail.com>"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/malobre/vue-sfc"
+readme = "README.md"
+keywords = ["vue", "sfc"]
+include = ["src/**/*", "Cargo.toml", "LICENSE"]
+
+[dependencies]
+nom = "7.1"
