@@ -146,10 +146,88 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
+
+    use crate::{Block, BlockName, Section};
+
     use super::parse;
 
     #[test]
     fn test_parse_empty() {
         assert_eq!(parse("").unwrap(), vec![]);
+    }
+
+    #[test]
+    fn test_parse_raw() {
+        assert_eq!(
+            parse("<!-- a comment -->").unwrap(),
+            vec![Section::Raw(Cow::Borrowed("<!-- a comment -->"))]
+        );
+    }
+
+    #[test]
+    fn test_parse_block() {
+        assert_eq!(
+            parse("<template></template>").unwrap(),
+            vec![Section::Block(Block {
+                name: BlockName::try_from("template").unwrap(),
+                attributes: vec![],
+                content: Cow::default()
+            })]
+        );
+    }
+
+    #[test]
+    fn test_parse() {
+        let raw = r#"<template>
+  <router-view v-slot="{ Component }"
+  >
+    <suspense v-if="Component" :timeout="150">
+      <template #default>
+        <component :is="Component"/>
+      </template>
+      <template #fallback>
+        Loading...
+      </template>
+    </suspense>
+  </router-view>
+</template>
+
+<script lang="ts" setup>
+onErrorCaptured((err) => {
+  console.error(err);
+});
+</script>"#;
+
+        let sfc = parse(raw).unwrap();
+
+        match &sfc[0] {
+            Section::Block(Block {
+                name,
+                attributes,
+                content,
+            }) => {
+                assert_eq!(name.as_str(), "template");
+                assert_eq!(content.len(), 266);
+                assert!(attributes.is_empty());
+            }
+            _ => panic!("expected a block"),
+        }
+
+        match &sfc[1] {
+            Section::Block(Block {
+                name,
+                attributes,
+                content,
+            }) => {
+                assert_eq!(name.as_str(), "script");
+                assert_eq!(content.len(), 52);
+                assert_eq!(attributes[0].0.as_str(), "lang");
+                assert_eq!(attributes[0].1.as_ref().unwrap().as_str(), "ts");
+                assert_eq!(attributes[1].0.as_str(), "setup");
+                assert!(attributes[1].1.is_none());
+            }
+            _ => panic!("expected a block"),
+        }
     }
 }
