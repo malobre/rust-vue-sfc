@@ -10,6 +10,10 @@ use nom::{
     IResult, Parser,
 };
 
+/// # References
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#end-tag-open-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state>
 pub fn parse_end_tag<'a, 'b>(name: &'b str, input: &'a str) -> IResult<&'a str, &'a str> {
     delimited(
         tuple((char('<'), char('/'), multispace0)),
@@ -19,6 +23,10 @@ pub fn parse_end_tag<'a, 'b>(name: &'b str, input: &'a str) -> IResult<&'a str, 
     .parse(input)
 }
 
+/// # References
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#data-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#before-attribute-name-state>
 pub fn parse_start_tag(input: &str) -> IResult<&str, (BlockName, Vec<Attribute>)> {
     delimited(
         char('<'),
@@ -31,6 +39,11 @@ pub fn parse_start_tag(input: &str) -> IResult<&str, (BlockName, Vec<Attribute>)
     .parse(input)
 }
 
+/// # References
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#after-attribute-name-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#before-attribute-value-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(double-quoted)-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(single-quoted)-state>
 fn parse_start_tag_attribute(input: &str) -> IResult<&str, Attribute> {
     pair(
         parse_start_tag_attribute_name,
@@ -46,6 +59,9 @@ fn parse_start_tag_attribute(input: &str) -> IResult<&str, Attribute> {
     .parse(input)
 }
 
+/// # References
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#before-attribute-name-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-name-state>
 fn parse_start_tag_attribute_name(input: &str) -> IResult<&str, AttributeName> {
     take_while1(|ch: char| {
         !matches!(
@@ -63,6 +79,9 @@ fn parse_start_tag_attribute_name(input: &str) -> IResult<&str, AttributeName> {
     .parse(input)
 }
 
+/// # References
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state>
 fn parse_start_tag_name(input: &str) -> IResult<&str, BlockName> {
     take_while1(|ch: char| {
         !matches!(
