@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `AttributeName::from_cow_unchecked`.
 - Added `AttributeValue::from_cow_unchecked`.
+- Added `BlockName::from_cow_unchecked`.
 
 ### Removed
 
 - Removed `AttributeName::new`.
 - Removed `AttributeValue::new`.
+- Removed `BlockName::new`.
 
 ### Changed
 
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Section` and `Block` now implements `PartialOrd`, `Ord` and `Hash`.
 - Renamed `AttributeName::try_new` to `from_cow`.
 - Renamed `AttributeValue::try_new` to `from_cow`.
+- Renamed `BlockName::try_new` to `from_cow`.
 
 ### Fixed
 

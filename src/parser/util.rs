@@ -101,6 +101,6 @@ fn parse_start_tag_name(input: &str) -> IResult<&str, BlockName> {
             '\u{0009}' | '\u{000A}' | '\u{000C}' | '\u{0020}' | '\u{002F}' | '\u{003E}'
         )
     })
-    .map(BlockName::new)
+    .map(|str| unsafe { BlockName::from_cow_unchecked(Cow::Borrowed(str)) })
     .parse(input)
 }

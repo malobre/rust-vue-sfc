@@ -33,18 +33,7 @@ enum InvalidKind {
 pub struct BlockName<'a>(Cow<'a, str>);
 
 impl<'a> BlockName<'a> {
-    /// Create a new [`BlockName`].
-    ///
-    /// # Panics
-    /// Will panic where [`Self::try_new`] would error.
-    pub fn new(value: impl Into<Cow<'a, str>>) -> Self {
-        match Self::try_new(value) {
-            Ok(name) => name,
-            Err(err) => panic!("{}", err),
-        }
-    }
-
-    /// Try to create a new [`BlockName`].
+    /// Attempts to convert a string to a [`BlockName`].
     ///
     /// # Errors
     /// Will return an error if the string contains any of the following characters:
@@ -54,16 +43,14 @@ impl<'a> BlockName<'a> {
     /// - `U+0020 SPACE`,
     /// - `U+002F SOLIDUS (/)`,
     /// - `U+003E GREATER-THAN SIGN (>)`.
-    pub fn try_new(value: impl Into<Cow<'a, str>>) -> Result<Self, Invalid> {
-        let mut value = value.into();
-
-        if !value.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
+    pub fn from_cow(mut src: Cow<'a, str>) -> Result<Self, Invalid> {
+        if !src.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
             return Err(Invalid {
                 kind: InvalidKind::StartsWithNonAsciiAlpha,
             });
         }
 
-        if let Some(ch) = value.chars().find(|ch| {
+        if let Some(ch) = src.chars().find(|ch| {
             matches!(
                 ch,
                 '\u{0009}' | '\u{000A}' | '\u{000C}' | '\u{0020}' | '\u{002F}' | '\u{003E}'
@@ -74,11 +61,25 @@ impl<'a> BlockName<'a> {
             });
         }
 
-        if value.contains(|ch: char| ch.is_ascii_uppercase()) {
-            value.to_mut().make_ascii_lowercase();
+        if src.contains(|ch: char| ch.is_ascii_uppercase()) {
+            src.to_mut().make_ascii_lowercase();
         }
 
-        Ok(Self(value))
+        Ok(Self(src))
+    }
+
+    /// Convert a string into a [`BlockName`] **without** validating.
+    pub unsafe fn from_cow_unchecked(src: Cow<'a, str>) -> Self {
+        if cfg!(debug_assertions) {
+            match Self::from_cow(src) {
+                Ok(val) => val,
+                Err(err) => {
+                    panic!("BlockName::from_cow_unchecked(): {err}")
+                }
+            }
+        } else {
+            Self(src)
+        }
     }
 
     #[must_use]
@@ -107,23 +108,23 @@ impl Borrow<str> for BlockName<'_> {
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for BlockName<'a> {
-    type Error = Invalid;
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Self::try_new(value)
-    }
-}
-
 impl<'a> TryFrom<&'a str> for BlockName<'a> {
     type Error = Invalid;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
-        Self::try_new(value)
+        Self::from_cow(Cow::Borrowed(value))
     }
 }
 
 impl<'a> TryFrom<String> for BlockName<'a> {
     type Error = Invalid;
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::try_new(value)
+        Self::from_cow(Cow::Owned(value))
+    }
+}
+
+impl<'a> TryFrom<Cow<'a, str>> for BlockName<'a> {
+    type Error = Invalid;
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        Self::from_cow(value)
     }
 }
