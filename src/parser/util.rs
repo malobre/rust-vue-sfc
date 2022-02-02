@@ -41,21 +41,27 @@ pub fn parse_start_tag(input: &str) -> IResult<&str, (BlockName, Vec<Attribute>)
 
 /// # References
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#after-attribute-name-state>
-/// - <https://html.spec.whatwg.org/multipage/parsing.html#before-attribute-value-state>
-/// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(double-quoted)-state>
-/// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(single-quoted)-state>
 fn parse_start_tag_attribute(input: &str) -> IResult<&str, Attribute> {
     pair(
         parse_start_tag_attribute_name,
         opt(preceded(
             delimited(multispace0, char('='), multispace0),
-            alt((
-                delimited(char('\u{0022}'), take_until("\u{0022}"), char('\u{0022}')),
-                delimited(char('\u{0027}'), take_until("\u{0027}"), char('\u{0027}')),
-            ))
-            .map(AttributeValue::new),
+            parse_start_tag_attribute_value,
         )),
     )
+    .parse(input)
+}
+
+/// # References
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#before-attribute-value-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(double-quoted)-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(single-quoted)-state>
+fn parse_start_tag_attribute_value(input: &str) -> IResult<&str, AttributeValue> {
+    alt((
+        delimited(char('\u{0022}'), take_until("\u{0022}"), char('\u{0022}')),
+        delimited(char('\u{0027}'), take_until("\u{0027}"), char('\u{0027}')),
+    ))
+    .map(AttributeValue::new)
     .parse(input)
 }
 
