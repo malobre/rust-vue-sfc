@@ -4,7 +4,29 @@ use std::{
     ops::Deref,
 };
 
-use crate::ast::error::IllegalChar;
+#[derive(Debug)]
+pub struct Invalid {
+    kind: InvalidKind,
+}
+
+impl std::fmt::Display for Invalid {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.kind {
+            InvalidKind::StartsWithNonAsciiAlpha => {
+                write!(f, "block name must start with ASCII alpha")
+            }
+            InvalidKind::IllegalChar(ch) => write!(f, "block name cannot contain `{}`", ch),
+        }
+    }
+}
+
+impl std::error::Error for Invalid {}
+
+#[derive(Debug)]
+enum InvalidKind {
+    IllegalChar(char),
+    StartsWithNonAsciiAlpha,
+}
 
 /// The name of a block, i.e: `script` in `<script lang="ts">`.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -32,8 +54,14 @@ impl<'a> Name<'a> {
     /// - `U+0020 SPACE`,
     /// - `U+002F SOLIDUS (/)`,
     /// - `U+003E GREATER-THAN SIGN (>)`.
-    pub fn try_new(value: impl Into<Cow<'a, str>>) -> Result<Self, IllegalChar> {
+    pub fn try_new(value: impl Into<Cow<'a, str>>) -> Result<Self, Invalid> {
         let mut value = value.into();
+
+        if !value.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
+            return Err(Invalid {
+                kind: InvalidKind::StartsWithNonAsciiAlpha,
+            });
+        }
 
         if let Some(ch) = value.chars().find(|ch| {
             matches!(
@@ -41,7 +69,9 @@ impl<'a> Name<'a> {
                 '\u{0009}' | '\u{000A}' | '\u{000C}' | '\u{0020}' | '\u{002F}' | '\u{003E}'
             )
         }) {
-            return Err(IllegalChar(ch));
+            return Err(Invalid {
+                kind: InvalidKind::IllegalChar(ch),
+            });
         }
 
         if value.contains(|ch: char| ch.is_ascii_uppercase()) {
@@ -78,21 +108,21 @@ impl Borrow<str> for Name<'_> {
 }
 
 impl<'a> TryFrom<Cow<'a, str>> for Name<'a> {
-    type Error = IllegalChar;
+    type Error = Invalid;
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         Self::try_new(value)
     }
 }
 
 impl<'a> TryFrom<&'a str> for Name<'a> {
-    type Error = IllegalChar;
+    type Error = Invalid;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         Self::try_new(value)
     }
 }
 
 impl<'a> TryFrom<String> for Name<'a> {
-    type Error = IllegalChar;
+    type Error = Invalid;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::try_new(value)
     }

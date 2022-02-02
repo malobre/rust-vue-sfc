@@ -4,7 +4,7 @@ use nom::{
     branch::alt,
     bytes::complete::{tag_no_case, take_until, take_while1},
     character::complete::{char, multispace0, multispace1},
-    combinator::opt,
+    combinator::{fail, opt},
     multi::many0,
     sequence::{delimited, pair, preceded, tuple},
     IResult, Parser,
@@ -89,6 +89,10 @@ fn parse_start_tag_attribute_name(input: &str) -> IResult<&str, AttributeName> {
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state>
 fn parse_start_tag_name(input: &str) -> IResult<&str, BlockName> {
+    if !input.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
+        return fail(input);
+    }
+
     take_while1(|ch: char| {
         !matches!(
             ch,
