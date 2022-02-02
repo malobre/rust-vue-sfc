@@ -135,3 +135,13 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
 
     Ok(buffer)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::parse;
+
+    #[test]
+    fn test_parse_empty() {
+        assert_eq!(parse("").unwrap(), vec![]);
+    }
+}
