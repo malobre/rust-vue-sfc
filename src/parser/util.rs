@@ -63,7 +63,7 @@ fn parse_start_tag_attribute_value(input: &str) -> IResult<&str, AttributeValue>
         delimited(char('\u{0022}'), take_until("\u{0022}"), char('\u{0022}')),
         delimited(char('\u{0027}'), take_until("\u{0027}"), char('\u{0027}')),
     ))
-    .map(AttributeValue::new)
+    .map(|str| unsafe { AttributeValue::from_cow_unchecked(Cow::Borrowed(str)) })
     .parse(input)
 }
 

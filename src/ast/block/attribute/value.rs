@@ -11,34 +11,35 @@ use crate::ast::error::IllegalChar;
 pub struct AttributeValue<'a>(Cow<'a, str>);
 
 impl<'a> AttributeValue<'a> {
-    /// Create a new [`AttributeValue`].
-    ///
-    /// # Panics
-    /// Will panic where `Self::try_new` would error.
-    pub fn new(value: impl Into<Cow<'a, str>>) -> Self {
-        match Self::try_new(value) {
-            Ok(value) => value,
-            Err(err) => panic!("{}", err),
-        }
-    }
-
-    /// Create a new [`AttributeValue`].
+    /// Attempts to convert a string to an [`AttributeValue`].
     ///
     /// # Errors
     /// Will return an error if the string contains both
     /// a `U+0022 QUOTATION MARK (")` and an `U+0027 APOSTROPHE (')`.
-    pub fn try_new(value: impl Into<Cow<'a, str>>) -> Result<Self, IllegalChar> {
-        let value = value.into();
-
-        if value.contains('\u{0022}') {
-            if value.contains('\u{0027}') {
+    pub fn from_cow(src: Cow<'a, str>) -> Result<Self, IllegalChar> {
+        if src.contains('\u{0022}') {
+            if src.contains('\u{0027}') {
                 return Err(IllegalChar('\u{0027}'));
             }
 
-            return Ok(Self(value));
+            return Ok(Self(src));
         }
 
-        Ok(Self(value))
+        Ok(Self(src))
+    }
+
+    /// Convert a string into an [`AttributeValue`] **without** validating.
+    pub unsafe fn from_cow_unchecked(src: Cow<'a, str>) -> Self {
+        if cfg!(debug_assertions) {
+            match Self::from_cow(src) {
+                Ok(val) => val,
+                Err(err) => {
+                    panic!("AttributeValue::from_cow_unchecked(): {err}")
+                }
+            }
+        } else {
+            Self(src)
+        }
     }
 
     #[must_use]
@@ -70,20 +71,20 @@ impl Display for AttributeValue<'_> {
 impl<'a> TryFrom<Cow<'a, str>> for AttributeValue<'a> {
     type Error = IllegalChar;
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Self::try_new(value)
+        Self::from_cow(value)
     }
 }
 
 impl<'a> TryFrom<&'a str> for AttributeValue<'a> {
     type Error = IllegalChar;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
-        Self::try_new(value)
+        Self::from_cow(Cow::Borrowed(value))
     }
 }
 
 impl<'a> TryFrom<String> for AttributeValue<'a> {
     type Error = IllegalChar;
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::try_new(value)
+        Self::from_cow(Cow::Owned(value))
     }
 }
