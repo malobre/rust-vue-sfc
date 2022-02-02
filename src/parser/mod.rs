@@ -39,6 +39,8 @@ mod util;
 /// }
 /// ```
 pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
+    //TODO: Improve readability / refactor code.
+
     #[derive(Debug)]
     enum State<'a> {
         OutsideBlock {
@@ -115,6 +117,9 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
                     }
 
                     input = remaining;
+
+                    // Index was just reset, don't advance to next `<`.
+                    continue;
                 } else {
                     *depth -= 1;
                 }
@@ -174,6 +179,25 @@ mod tests {
                 attributes: vec![],
                 content: Cow::default()
             })]
+        );
+    }
+
+    #[test]
+    fn test_parse_consecutive_blocks() {
+        assert_eq!(
+            parse("<template></template><script></script>").unwrap(),
+            vec![
+                Section::Block(Block {
+                    name: BlockName::try_from("template").unwrap(),
+                    attributes: vec![],
+                    content: Cow::default()
+                }),
+                Section::Block(Block {
+                    name: BlockName::try_from("script").unwrap(),
+                    attributes: vec![],
+                    content: Cow::default()
+                })
+            ]
         );
     }
 
