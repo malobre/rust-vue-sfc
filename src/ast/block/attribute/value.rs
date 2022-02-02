@@ -8,10 +8,10 @@ use crate::ast::error::IllegalChar;
 
 /// The value of an attribute, i.e: `ts` in `<script lang="ts">`.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct Value<'a>(Cow<'a, str>);
+pub struct AttributeValue<'a>(Cow<'a, str>);
 
-impl<'a> Value<'a> {
-    /// Create a new [`Value`].
+impl<'a> AttributeValue<'a> {
+    /// Create a new [`AttributeValue`].
     ///
     /// # Panics
     /// Will panic where `Self::try_new` would error.
@@ -22,7 +22,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    /// Create a new [`Value`].
+    /// Create a new [`AttributeValue`].
     ///
     /// # Errors
     /// Will return an error if the string contains both
@@ -47,7 +47,7 @@ impl<'a> Value<'a> {
     }
 }
 
-impl Deref for Value<'_> {
+impl Deref for AttributeValue<'_> {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
@@ -55,33 +55,33 @@ impl Deref for Value<'_> {
     }
 }
 
-impl Borrow<str> for Value<'_> {
+impl Borrow<str> for AttributeValue<'_> {
     fn borrow(&self) -> &str {
         self.as_str()
     }
 }
 
-impl Display for Value<'_> {
+impl Display for AttributeValue<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.as_str().fmt(f)
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for Value<'a> {
+impl<'a> TryFrom<Cow<'a, str>> for AttributeValue<'a> {
     type Error = IllegalChar;
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         Self::try_new(value)
     }
 }
 
-impl<'a> TryFrom<&'a str> for Value<'a> {
+impl<'a> TryFrom<&'a str> for AttributeValue<'a> {
     type Error = IllegalChar;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         Self::try_new(value)
     }
 }
 
-impl<'a> TryFrom<String> for Value<'a> {
+impl<'a> TryFrom<String> for AttributeValue<'a> {
     type Error = IllegalChar;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::try_new(value)

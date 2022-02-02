@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fmt::Display};
 
-pub use self::attribute::{Attribute, Name as AttributeName, Value as AttributeValue};
-pub use self::name::Name;
+pub use self::attribute::{Attribute, AttributeName, AttributeValue};
+pub use self::name::BlockName;
 
 mod attribute;
 mod name;
@@ -11,7 +11,7 @@ mod name;
 /// [1]: https://v3.vuejs.org/api/sfc-spec.html#language-blocks
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Block<'a> {
-    pub name: Name<'a>,
+    pub name: BlockName<'a>,
     pub attributes: Vec<(AttributeName<'a>, Option<AttributeValue<'a>>)>,
     pub content: Cow<'a, str>,
 }
@@ -56,13 +56,13 @@ impl Display for Block<'_> {
 mod tests {
     use std::borrow::Cow;
 
-    use super::{AttributeName, AttributeValue, Block, Name};
+    use super::{AttributeName, AttributeValue, Block, BlockName};
 
     #[test]
     fn test_display() {
         assert_eq!(
             Block {
-                name: Name::try_from("template").unwrap(),
+                name: BlockName::try_from("template").unwrap(),
                 attributes: Vec::new(),
                 content: Cow::Borrowed("")
             }
@@ -72,7 +72,7 @@ mod tests {
 
         assert_eq!(
             Block {
-                name: Name::try_from("script").unwrap(),
+                name: BlockName::try_from("script").unwrap(),
                 attributes: vec![(
                     AttributeName::try_from("lang").unwrap(),
                     Some(AttributeValue::try_from("ts").unwrap())
@@ -85,7 +85,7 @@ mod tests {
 
         assert_eq!(
             Block {
-                name: Name::try_from("script").unwrap(),
+                name: BlockName::try_from("script").unwrap(),
                 attributes: vec![
                     (
                         AttributeName::try_from("lang").unwrap(),
@@ -101,7 +101,7 @@ mod tests {
 
         assert_eq!(
             Block {
-                name: Name::try_from("style").unwrap(),
+                name: BlockName::try_from("style").unwrap(),
                 attributes: vec![(AttributeName::try_from("scoped").unwrap(), None)],
                 content: Cow::Borrowed("")
             }
@@ -111,7 +111,7 @@ mod tests {
 
         assert_eq!(
             Block {
-                name: Name::try_from("template").unwrap(),
+                name: BlockName::try_from("template").unwrap(),
                 attributes: Vec::new(),
                 content: Cow::Borrowed("<!-- content -->")
             }
@@ -121,7 +121,7 @@ mod tests {
 
         assert_eq!(
             Block {
-                name: Name::try_from("template").unwrap(),
+                name: BlockName::try_from("template").unwrap(),
                 attributes: Vec::new(),
                 content: Cow::Borrowed("<!-- multiline -->\n<!-- content -->")
             }

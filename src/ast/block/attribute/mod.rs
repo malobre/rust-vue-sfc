@@ -1,8 +1,8 @@
-pub use self::name::Name;
-pub use self::value::Value;
+pub use self::name::AttributeName;
+pub use self::value::AttributeValue;
 
 /// Convenience type alias.
-pub type Attribute<'a> = (Name<'a>, Option<Value<'a>>);
+pub type Attribute<'a> = (AttributeName<'a>, Option<AttributeValue<'a>>);
 
 mod name;
 mod value;

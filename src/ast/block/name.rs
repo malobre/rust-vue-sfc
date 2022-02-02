@@ -30,10 +30,10 @@ enum InvalidKind {
 
 /// The name of a block, i.e: `script` in `<script lang="ts">`.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct Name<'a>(Cow<'a, str>);
+pub struct BlockName<'a>(Cow<'a, str>);
 
-impl<'a> Name<'a> {
-    /// Create a new [`Name`].
+impl<'a> BlockName<'a> {
+    /// Create a new [`BlockName`].
     ///
     /// # Panics
     /// Will panic where [`Self::try_new`] would error.
@@ -44,7 +44,7 @@ impl<'a> Name<'a> {
         }
     }
 
-    /// Try to create a new [`Name`].
+    /// Try to create a new [`BlockName`].
     ///
     /// # Errors
     /// Will return an error if the string contains any of the following characters:
@@ -87,13 +87,13 @@ impl<'a> Name<'a> {
     }
 }
 
-impl Display for Name<'_> {
+impl Display for BlockName<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.as_str().fmt(f)
     }
 }
 
-impl Deref for Name<'_> {
+impl Deref for BlockName<'_> {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
@@ -101,27 +101,27 @@ impl Deref for Name<'_> {
     }
 }
 
-impl Borrow<str> for Name<'_> {
+impl Borrow<str> for BlockName<'_> {
     fn borrow(&self) -> &str {
         self.as_str()
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for Name<'a> {
+impl<'a> TryFrom<Cow<'a, str>> for BlockName<'a> {
     type Error = Invalid;
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         Self::try_new(value)
     }
 }
 
-impl<'a> TryFrom<&'a str> for Name<'a> {
+impl<'a> TryFrom<&'a str> for BlockName<'a> {
     type Error = Invalid;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         Self::try_new(value)
     }
 }
 
-impl<'a> TryFrom<String> for Name<'a> {
+impl<'a> TryFrom<String> for BlockName<'a> {
     type Error = Invalid;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::try_new(value)
