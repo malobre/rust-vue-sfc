@@ -5,25 +5,25 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct Invalid {
-    kind: InvalidKind,
+pub struct InvalidBlockName {
+    kind: InvalidBlockNameKind,
 }
 
-impl std::fmt::Display for Invalid {
+impl std::fmt::Display for InvalidBlockName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind {
-            InvalidKind::StartsWithNonAsciiAlpha => {
+            InvalidBlockNameKind::StartsWithNonAsciiAlpha => {
                 write!(f, "block name must start with ASCII alpha")
             }
-            InvalidKind::IllegalChar(ch) => write!(f, "block name cannot contain `{}`", ch),
+            InvalidBlockNameKind::IllegalChar(ch) => write!(f, "block name cannot contain `{}`", ch),
         }
     }
 }
 
-impl std::error::Error for Invalid {}
+impl std::error::Error for InvalidBlockName {}
 
 #[derive(Debug)]
-enum InvalidKind {
+enum InvalidBlockNameKind {
     IllegalChar(char),
     StartsWithNonAsciiAlpha,
 }
@@ -43,10 +43,10 @@ impl<'a> BlockName<'a> {
     /// - `U+0020 SPACE`,
     /// - `U+002F SOLIDUS (/)`,
     /// - `U+003E GREATER-THAN SIGN (>)`.
-    pub fn from_cow(mut src: Cow<'a, str>) -> Result<Self, Invalid> {
+    pub fn from_cow(mut src: Cow<'a, str>) -> Result<Self, InvalidBlockName> {
         if !src.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
-            return Err(Invalid {
-                kind: InvalidKind::StartsWithNonAsciiAlpha,
+            return Err(InvalidBlockName {
+                kind: InvalidBlockNameKind::StartsWithNonAsciiAlpha,
             });
         }
 
@@ -56,8 +56,8 @@ impl<'a> BlockName<'a> {
                 '\u{0009}' | '\u{000A}' | '\u{000C}' | '\u{0020}' | '\u{002F}' | '\u{003E}'
             )
         }) {
-            return Err(Invalid {
-                kind: InvalidKind::IllegalChar(ch),
+            return Err(InvalidBlockName {
+                kind: InvalidBlockNameKind::IllegalChar(ch),
             });
         }
 
@@ -109,21 +109,21 @@ impl Borrow<str> for BlockName<'_> {
 }
 
 impl<'a> TryFrom<&'a str> for BlockName<'a> {
-    type Error = Invalid;
+    type Error = InvalidBlockName;
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         Self::from_cow(Cow::Borrowed(value))
     }
 }
 
 impl<'a> TryFrom<String> for BlockName<'a> {
-    type Error = Invalid;
+    type Error = InvalidBlockName;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_cow(Cow::Owned(value))
     }
 }
 
 impl<'a> TryFrom<Cow<'a, str>> for BlockName<'a> {
-    type Error = Invalid;
+    type Error = InvalidBlockName;
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         Self::from_cow(value)
     }
