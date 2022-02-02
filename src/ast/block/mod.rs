@@ -21,7 +21,7 @@ impl Display for Block<'_> {
         let Self {
             name,
             attributes,
-            content
+            content,
         } = self;
 
         let content = content.trim_end();

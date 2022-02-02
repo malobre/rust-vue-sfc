@@ -40,57 +40,93 @@ mod error;
 pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
     #[derive(Debug)]
     enum State<'a> {
-        OutsideBlock,
+        OutsideBlock {
+            index: usize,
+        },
         InsideBlock {
             name: BlockName<'a>,
             attributes: Vec<Attribute<'a>>,
+            depth: usize,
+            index: usize,
         },
     }
 
     let mut buffer = Vec::new();
-    let mut index = 0;
-    let mut state = State::OutsideBlock;
+    let mut state = State::OutsideBlock { index: 0 };
 
     while !input.is_empty() {
+        // Check for start tag
         match state {
-            State::OutsideBlock => {
+            State::InsideBlock {
+                ref name,
+                index,
+                ref mut depth,
+                ..
+            } => {
+                if let Ok((_, (next_tag_name, _))) = parse_start_tag(&input[index..]) {
+                    if *name == next_tag_name {
+                        *depth += 1;
+                    }
+                }
+            }
+            State::OutsideBlock { index } => {
                 if let Ok((remaining, (name, attributes))) = parse_start_tag(&input[index..]) {
                     if !input[..index].is_empty() {
                         buffer.push(Section::Raw(Cow::Borrowed(&input[..index])));
                     }
 
-                    state = State::InsideBlock { name, attributes };
-                    index = 0;
+                    state = State::InsideBlock {
+                        name,
+                        attributes,
+                        depth: 0,
+                        index: 0,
+                    };
                     input = remaining;
-                } else if let Some(j) = input.get((index + 1)..).and_then(|input| input.find('<')) {
-                    index += j + 1;
+                }
+            }
+        }
+
+        // Check for end tag
+        if let State::InsideBlock {
+            ref name,
+            ref mut depth,
+            index,
+            ..
+        } = state
+        {
+            if let Ok((remaining, _)) = parse_end_tag(name, &input[index..]) {
+                if *depth == 0 {
+                    if let State::InsideBlock {
+                        name, attributes, ..
+                    } = std::mem::replace(&mut state, State::OutsideBlock { index: 0 })
+                    {
+                        buffer.push(Section::Block(Block {
+                            name,
+                            attributes,
+                            content: Cow::Borrowed(&input[..index]),
+                        }));
+                    }
+
+                    input = remaining;
+                } else {
+                    *depth -= 1;
+                }
+            }
+        }
+
+        // Advance index to next `<`.
+        match state {
+            State::InsideBlock { ref mut index, .. } | State::OutsideBlock { ref mut index } => {
+                if let Some(j) = input.get((*index + 1)..).and_then(|input| input.find('<')) {
+                    *index += j + 1;
+                } else if let State::InsideBlock { name, .. } = state {
+                    return Err(ParseError::MissingEndTag(name.as_str().to_owned()));
                 } else {
                     if !input.is_empty() {
                         buffer.push(Section::Raw(Cow::Borrowed(input)));
                     }
 
                     return Ok(buffer);
-                }
-            }
-            State::InsideBlock { ref name, .. } => {
-                if let Ok((remaining, _)) = parse_end_tag(name, &input[index..]) {
-                    match std::mem::replace(&mut state, State::OutsideBlock) {
-                        State::InsideBlock { name, attributes } => {
-                            buffer.push(Section::Block(Block {
-                                name,
-                                attributes,
-                                content: Cow::Borrowed(&input[..index]),
-                            }));
-                        }
-                        _ => unreachable!(),
-                    }
-
-                    index = 0;
-                    input = remaining;
-                } else if let Some(j) = input.get((index + 1)..).and_then(|input| input.find('<')) {
-                    index += j + 1;
-                } else {
-                    return Err(ParseError::MissingEndTag(name.as_str().to_owned()));
                 }
             }
         }
