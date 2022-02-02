@@ -81,7 +81,7 @@ fn parse_start_tag_attribute_name(input: &str) -> IResult<&str, AttributeName> {
                 | '\u{003E}'
         )
     })
-    .map(AttributeName::new)
+    .map(|str| unsafe { AttributeName::from_str_unchecked(str) })
     .parse(input)
 }
 

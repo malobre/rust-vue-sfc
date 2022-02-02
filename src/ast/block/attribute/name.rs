@@ -47,6 +47,20 @@ impl<'a> AttributeName<'a> {
         Ok(Self(value))
     }
 
+    /// Convert a string into an [`AttributeName`] **without** validating.
+    pub unsafe fn from_str_unchecked(src: &'a str) -> Self {
+        if cfg!(debug_assertions) {
+            match Self::try_new(src) {
+                Ok(val) => val,
+                Err(_) => {
+                    panic!("AttributeName::from_str_unchecked() with illegal chars")
+                }
+            }
+        } else {
+            Self(Cow::Borrowed(src))
+        }
+    }
+
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
