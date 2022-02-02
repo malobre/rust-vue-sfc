@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix nested tags parsing.
+- Fixed nested tags parsing.
 - Fixed comments being parsed as block, (tag name must now begin with an ASCII alpha).
 - Fixed consecutive blocks not being parsed.
 
