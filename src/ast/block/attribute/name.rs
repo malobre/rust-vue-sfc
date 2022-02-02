@@ -11,17 +11,6 @@ use crate::ast::error::IllegalChar;
 pub struct AttributeName<'a>(Cow<'a, str>);
 
 impl<'a> AttributeName<'a> {
-    /// Create a new [`AttributeName`].
-    ///
-    /// # Panics
-    /// Will panic where [`Self::try_new`] would error.
-    pub fn new(value: impl Into<Cow<'a, str>>) -> Self {
-        match Self::try_new(value) {
-            Ok(name) => name,
-            Err(err) => panic!("{}", err),
-        }
-    }
-
     /// Try to create a new [`AttributeName`].
     ///
     /// # Errors
