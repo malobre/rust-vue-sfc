@@ -26,6 +26,7 @@ mod error {
 
 /// The name of an attribute, i.e: `lang` in `<script lang="ts">`.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[must_use]
 pub struct AttributeName<'a>(Cow<'a, str>);
 
 impl<'a> AttributeName<'a> {

@@ -26,6 +26,7 @@ mod error {
 
 /// The value of an attribute, i.e: `ts` in `<script lang="ts">`.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[must_use]
 pub struct AttributeValue<'a>(Cow<'a, str>);
 
 impl<'a> AttributeValue<'a> {

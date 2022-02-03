@@ -39,6 +39,7 @@ mod error {
 
 /// The name of a block, i.e: `script` in `<script lang="ts">`.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[must_use]
 pub struct BlockName<'a>(Cow<'a, str>);
 
 impl<'a> BlockName<'a> {
