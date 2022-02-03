@@ -46,7 +46,14 @@ impl<'a> AttributeValue<'a> {
         Ok(Self(src))
     }
 
-    /// Convert a string into an [`AttributeValue`] **without** validating.
+    /// Convert a string into an [`AttributeValue`] **without** validating
+    /// (unless `debug_assertions` is enabled).
+    ///
+    /// # Panics
+    /// If `debug_assertions` is enabled, validate the input and panic on failure.
+    ///
+    /// # Safety
+    /// See string prerequisites of [`AttributeValue::from_cow`].
     pub unsafe fn from_cow_unchecked(src: Cow<'a, str>) -> Self {
         if cfg!(debug_assertions) {
             match Self::from_cow(src) {

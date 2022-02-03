@@ -45,13 +45,15 @@ impl<'a> BlockName<'a> {
     /// Attempts to convert a string to a [`BlockName`].
     ///
     /// # Errors
-    /// Will return an error if the string contains any of the following characters:
-    /// - `U+0009 CHARACTER TABULATION`,
-    /// - `U+000A LINE FEED`,
-    /// - `U+000C FORM FEED`,
-    /// - `U+0020 SPACE`,
-    /// - `U+002F SOLIDUS (/)`,
-    /// - `U+003E GREATER-THAN SIGN (>)`.
+    /// Will return an error if the string:
+    /// - doesn't start with an ASCII alpha,
+    /// - contains any of the following characters:
+    ///   - `U+0009 CHARACTER TABULATION`,
+    ///   - `U+000A LINE FEED`,
+    ///   - `U+000C FORM FEED`,
+    ///   - `U+0020 SPACE`,
+    ///   - `U+002F SOLIDUS (/)`,
+    ///   - `U+003E GREATER-THAN SIGN (>)`.
     pub fn from_cow(mut src: Cow<'a, str>) -> Result<Self, InvalidBlockName> {
         if !src.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
             return Err(InvalidBlockName(
@@ -75,7 +77,14 @@ impl<'a> BlockName<'a> {
         Ok(Self(src))
     }
 
-    /// Convert a string into a [`BlockName`] **without** validating.
+    /// Convert a string into a [`BlockName`] **without** validating
+    /// (unless `debug_assertions` is enabled).
+    ///
+    /// # Panics
+    /// If `debug_assertions` is enabled, validate the input and panic on failure.
+    ///
+    /// # Safety
+    /// See string prerequisites of [`BlockName::from_cow`].
     pub unsafe fn from_cow_unchecked(src: Cow<'a, str>) -> Self {
         if cfg!(debug_assertions) {
             match Self::from_cow(src) {
