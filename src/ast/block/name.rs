@@ -22,7 +22,7 @@ mod error {
                     write!(f, "block name must start with ASCII alpha")
                 }
                 Self(InvalidBlockNameKind::IllegalChar(ch)) => {
-                    write!(f, "block name cannot contain `{}`", ch)
+                    write!(f, "block name cannot contain `{ch}`")
                 }
             }
         }
