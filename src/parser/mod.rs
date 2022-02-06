@@ -136,7 +136,7 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
                 } else {
                     let content = input.trim_start_matches(['\n', '\r']).trim_end();
 
-                    if !input.is_empty() {
+                    if !content.is_empty() {
                         buffer.push(Section::Raw(Cow::Borrowed(content)));
                     }
 

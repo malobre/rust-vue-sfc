@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed parsing of trailing raw sections, which could be empty if they contained only `\r` & `\n`.
+
 ## [0.2.0] - 2022-02-03
 
 ### Added
