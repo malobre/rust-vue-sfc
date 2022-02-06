@@ -3,7 +3,7 @@ use std::borrow::Cow;
 pub use self::error::ParseError;
 use self::util::parse_start_tag;
 
-use crate::{parser::util::parse_end_tag, Attribute, Block, BlockName, Section};
+use crate::{parser::util::parse_end_tag, Attribute, Block, BlockName, Raw, Section};
 
 mod error;
 mod util;
@@ -77,7 +77,9 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
                     let content = input[..index].trim_start_matches(['\n', '\r']).trim_end();
 
                     if !content.is_empty() {
-                        buffer.push(Section::Raw(Cow::Borrowed(content)));
+                        // SAFETY: `content` is end-trimmed and non-empty.
+                        let raw = unsafe { Raw::from_cow_unchecked(Cow::Borrowed(content)) };
+                        buffer.push(Section::Raw(raw));
                     }
 
                     state = State::InsideBlock {
@@ -137,7 +139,9 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
                     let content = input.trim_start_matches(['\n', '\r']).trim_end();
 
                     if !content.is_empty() {
-                        buffer.push(Section::Raw(Cow::Borrowed(content)));
+                        // SAFETY: `content` is end-trimmed and non-empty.
+                        let raw = unsafe { Raw::from_cow_unchecked(Cow::Borrowed(content)) };
+                        buffer.push(Section::Raw(raw));
                     }
 
                     return Ok(buffer);
@@ -153,7 +157,7 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
 mod tests {
     use std::borrow::Cow;
 
-    use crate::{Block, BlockName, Section};
+    use crate::{Block, BlockName, Raw, Section};
 
     use super::parse;
 
@@ -166,7 +170,7 @@ mod tests {
     fn test_parse_raw() {
         assert_eq!(
             parse("<!-- a comment -->").unwrap(),
-            vec![Section::Raw(Cow::Borrowed("<!-- a comment -->"))]
+            vec![Section::Raw(Raw::try_from("<!-- a comment -->").unwrap())]
         );
     }
 

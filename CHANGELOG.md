@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added `Raw` struct for raw sections.
+- Added `InvalidRaw` error.
+
+### Changed
+
+- `Section::Raw` now contains a `Raw`.
+
 ### Fixed
 
 - Fixed parsing of trailing raw sections, which could be empty if they contained only `\r` & `\n`.

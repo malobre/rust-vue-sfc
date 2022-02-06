@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::ast::{InvalidAttributeName, InvalidAttributeValue, InvalidBlockName};
+use crate::ast::{InvalidAttributeName, InvalidAttributeValue, InvalidBlockName, InvalidRaw};
 use crate::parser::ParseError;
 
 #[derive(Debug)]
@@ -9,6 +9,7 @@ enum ErrorKind {
     InvalidBlockName(InvalidBlockName),
     InvalidAttributeName(InvalidAttributeName),
     InvalidAttributeValue(InvalidAttributeValue),
+    InvalidRaw(InvalidRaw),
 }
 
 /// A generic error.
@@ -27,6 +28,7 @@ impl Error {
             ErrorKind::InvalidBlockName(err) => err,
             ErrorKind::InvalidAttributeName(err) => err,
             ErrorKind::InvalidAttributeValue(err) => err,
+            ErrorKind::InvalidRaw(err) => err,
         }
     }
 }
@@ -64,5 +66,11 @@ impl From<InvalidAttributeName> for Error {
 impl From<InvalidAttributeValue> for Error {
     fn from(err: InvalidAttributeValue) -> Self {
         Self(ErrorKind::InvalidAttributeValue(err))
+    }
+}
+
+impl From<InvalidRaw> for Error {
+    fn from(err: InvalidRaw) -> Self {
+        Self(ErrorKind::InvalidRaw(err))
     }
 }
