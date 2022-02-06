@@ -120,9 +120,9 @@ pub fn parse(mut input: &str) -> Result<Vec<Section<'_>>, ParseError> {
 
                     // Index was just reset, don't advance to next `<`.
                     continue;
-                } else {
-                    *depth -= 1;
                 }
+
+                *depth -= 1;
             }
         }
 
