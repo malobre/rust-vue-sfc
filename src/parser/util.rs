@@ -4,7 +4,7 @@ use crate::{Attribute, AttributeName, AttributeValue, BlockName};
 
 use nom::{
     branch::alt,
-    bytes::complete::{tag_no_case, take_until, take_while1},
+    bytes::complete::{tag, take_until, take_while1},
     character::complete::{char, multispace0, multispace1},
     combinator::{fail, opt},
     multi::many0,
@@ -16,13 +16,8 @@ use nom::{
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#end-tag-open-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state>
-pub fn parse_end_tag<'a, 'b>(name: &BlockName<'b>, input: &'a str) -> IResult<&'a str, &'a str> {
-    delimited(
-        tuple((char('<'), char('/'), multispace0)),
-        tag_no_case(name.as_str()),
-        tuple((multispace0, char('>'))),
-    )
-    .parse(input)
+pub fn parse_end_tag(input: &str) -> IResult<&str, BlockName> {
+    delimited(tag("</"), parse_tag_name, preceded(multispace0, char('>'))).parse(input)
 }
 
 /// # References
@@ -33,7 +28,7 @@ pub fn parse_start_tag(input: &str) -> IResult<&str, (BlockName, Vec<Attribute>)
     delimited(
         char('<'),
         tuple((
-            preceded(multispace0, parse_start_tag_name),
+            parse_tag_name,
             many0(preceded(multispace1, parse_start_tag_attribute)),
         )),
         preceded(multispace0, char('>')),
@@ -90,7 +85,7 @@ fn parse_start_tag_attribute_name(input: &str) -> IResult<&str, AttributeName> {
 /// # References
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state>
-fn parse_start_tag_name(input: &str) -> IResult<&str, BlockName> {
+fn parse_tag_name(input: &str) -> IResult<&str, BlockName> {
     if !input.starts_with(|ch: char| ch.is_ascii_alphabetic()) {
         return fail(input);
     }

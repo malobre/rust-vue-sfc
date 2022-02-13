@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Blocks are now parsed as raw text with two exceptions:
+  - `template` blocks with no `lang` attribute,
+  - `template` blocks with a `lang` attribute set to `html`.
+
 ## [0.3.0] - 2022-02-06
 
 ### Added
