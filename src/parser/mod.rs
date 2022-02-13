@@ -54,14 +54,7 @@ pub fn parse(input: &str) -> Result<Vec<Section<'_>>, ParseError> {
         },
     }
 
-    let mut less_than_symbols = std::iter::successors(input.find('<'), |&last| {
-        let offset = last + 1;
-
-        input
-            .get(offset..)
-            .and_then(|s| s.find('<'))
-            .map(|n| offset + n)
-    });
+    let mut less_than_symbols = memchr::memmem::find_iter(input.as_bytes(), "<");
 
     let mut buffer = Vec::new();
     let mut state = State::OutsideBlock { offset: 0 };

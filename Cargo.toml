@@ -11,6 +11,7 @@ keywords = ["vue", "sfc"]
 include = ["src/**/*", "Cargo.toml", "LICENSE"]
 
 [dependencies]
+memchr = "2.4.1"
 nom = "7.1"
 
 [dev-dependencies]
