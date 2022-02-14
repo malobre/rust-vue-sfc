@@ -8,7 +8,7 @@ use nom::{
     character::complete::{char, multispace0, multispace1},
     combinator::{fail, opt},
     multi::many0,
-    sequence::{delimited, pair, preceded, tuple},
+    sequence::{delimited, pair, preceded},
     IResult, Parser,
 };
 
@@ -27,10 +27,10 @@ pub fn parse_end_tag(input: &str) -> IResult<&str, BlockName> {
 pub fn parse_start_tag(input: &str) -> IResult<&str, (BlockName, Vec<Attribute>)> {
     delimited(
         char('<'),
-        tuple((
+        pair(
             parse_tag_name,
             many0(preceded(multispace1, parse_start_tag_attribute)),
-        )),
+        ),
         preceded(multispace0, char('>')),
     )
     .parse(input)
