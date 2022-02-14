@@ -14,7 +14,7 @@ mod name;
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Block<'a> {
     pub name: BlockName<'a>,
-    pub attributes: Vec<(AttributeName<'a>, Option<AttributeValue<'a>>)>,
+    pub attributes: Vec<Attribute<'a>>,
     pub content: Cow<'a, str>,
 }
 
