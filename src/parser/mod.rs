@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 pub use self::error::ParseError;
-use self::util::parse_start_tag;
+use self::util::{parse_start_tag, trim_start_newlines_end};
 
 use crate::{
     parser::util::parse_end_tag, Attribute, AttributeValue, Block, BlockName, Raw, Section,
@@ -9,6 +9,26 @@ use crate::{
 
 mod error;
 mod util;
+
+/// Represent the state of the parser.
+#[derive(Debug)]
+enum State<'a> {
+    /// When the parser is at root level.
+    Root,
+    /// When the parser is in a block in `data state`.
+    /// See <https://html.spec.whatwg.org/multipage/parsing.html#data-state>.
+    Data {
+        name: BlockName<'a>,
+        attributes: Vec<Attribute<'a>>,
+        depth: u16,
+    },
+    /// When the parser is in a block in `RAWTEXT state`.
+    /// See <https://html.spec.whatwg.org/multipage/parsing.html#rawtext-state>.
+    RawText {
+        name: BlockName<'a>,
+        attributes: Vec<Attribute<'a>>,
+    },
+}
 
 /// Parse the given input as a Vue SFC.
 ///
@@ -41,102 +61,19 @@ mod util;
 /// }
 /// ```
 pub fn parse(input: &str) -> Result<Vec<Section<'_>>, ParseError> {
-    #[derive(Debug)]
-    enum State<'a> {
-        OutsideBlock {
-            offset: usize,
-        },
-        InsideBlock {
-            name: BlockName<'a>,
-            attributes: Vec<Attribute<'a>>,
-            depth: usize,
-            offset: usize,
-        },
-    }
-
     let mut less_than_symbols = memchr::memmem::find_iter(input.as_bytes(), "<");
 
     let mut buffer = Vec::new();
-    let mut state = State::OutsideBlock { offset: 0 };
+    let mut offset = 0;
+    let mut state = State::Root;
 
     loop {
-        if let Some(index) = less_than_symbols.next() {
-            if let Ok((remaining, (name, attributes))) = parse_start_tag(&input[index..]) {
-                match state {
-                    State::OutsideBlock { offset } => {
-                        let raw = input[offset..index]
-                            .trim_start_matches(['\n', '\r'])
-                            .trim_end();
-
-                        if !raw.is_empty() {
-                            // SAFETY: `raw` is end-trimmed and non-empty.
-                            let raw = unsafe { Raw::from_cow_unchecked(Cow::Borrowed(raw)) };
-                            buffer.push(Section::Raw(raw));
-                        }
-
-                        state = State::InsideBlock {
-                            name,
-                            attributes,
-                            depth: 0,
-                            offset: input.len() - remaining.len(),
-                        };
-                    }
-                    State::InsideBlock {
-                        name: ref parent_name,
-                        ref mut depth,
-                        ref attributes,
-                        ..
-                    } => {
-                        let raw_text = parent_name.as_str() != "template"
-                            || attributes.iter().any(|(name, value)| {
-                                matches!(
-                                    (name.as_str(), value.as_ref().map(AttributeValue::as_str)),
-                                    ("lang", Some(lang)) if lang != "html"
-                                )
-                            });
-
-                        if !raw_text && parent_name == &name {
-                            *depth += 1;
-                        }
-                    }
-                }
-            } else if let Ok((remaining, name)) = parse_end_tag(&input[index..]) {
-                match state {
-                    State::OutsideBlock { .. } => {
-                        return Err(ParseError::UnexpectedEndTag(name.as_str().to_owned()));
-                    }
-                    State::InsideBlock {
-                        name: ref parent_name,
-                        ref mut depth,
-                        ref mut attributes,
-                        offset,
-                    } => {
-                        if &name == parent_name {
-                            if *depth == 0 {
-                                buffer.push(Section::Block(Block {
-                                    name,
-                                    attributes: std::mem::take(attributes),
-                                    content: Cow::Borrowed(
-                                        input[offset..index]
-                                            .trim_start_matches(['\n', '\r'])
-                                            .trim_end(),
-                                    ),
-                                }));
-
-                                state = State::OutsideBlock {
-                                    offset: input.len() - remaining.len(),
-                                };
-                            } else {
-                                *depth -= 1;
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            match state {
-                State::OutsideBlock { offset } => {
-                    let raw = input[offset..].trim_start_matches(['\n', '\r']).trim_end();
+        match state {
+            State::Root => {
+                let index = if let Some(index) = less_than_symbols.next() {
+                    index
+                } else {
+                    let raw = trim_start_newlines_end(&input[offset..]);
 
                     if !raw.is_empty() {
                         // SAFETY: `raw` is end-trimmed and non-empty.
@@ -145,9 +82,100 @@ pub fn parse(input: &str) -> Result<Vec<Section<'_>>, ParseError> {
                     }
 
                     break;
+                };
+
+                if let Ok((_, name)) = parse_end_tag(&input[index..]) {
+                    return Err(ParseError::UnexpectedEndTag(name.as_str().to_owned()));
                 }
-                State::InsideBlock { name, .. } => {
-                    return Err(ParseError::MissingEndTag(name.as_str().to_owned()));
+
+                if let Ok((remaining, (name, attributes))) = parse_start_tag(&input[index..]) {
+                    let raw = trim_start_newlines_end(&input[offset..index]);
+
+                    if !raw.is_empty() {
+                        // SAFETY: `raw` is end-trimmed and non-empty.
+                        let raw = unsafe { Raw::from_cow_unchecked(Cow::Borrowed(raw)) };
+                        buffer.push(Section::Raw(raw));
+                    }
+
+                    let raw_text = name.as_str() != "template"
+                        || attributes.iter().any(|(name, value)| {
+                            matches!(
+                                (name.as_str(), value.as_ref().map(AttributeValue::as_str)),
+                                ("lang", Some(lang)) if lang != "html"
+                            )
+                        });
+
+                    offset = input.len() - remaining.len();
+                    state = if raw_text {
+                        State::RawText { name, attributes }
+                    } else {
+                        State::Data {
+                            name,
+                            attributes,
+                            depth: 0,
+                        }
+                    };
+                }
+            }
+            State::Data {
+                name: ref parent_name,
+                ref mut attributes,
+                ref mut depth,
+            } => {
+                let index = less_than_symbols
+                    .next()
+                    .ok_or_else(|| ParseError::MissingEndTag(parent_name.as_str().to_owned()))?;
+
+                match parse_end_tag(&input[index..]) {
+                    Ok((remaining, name)) if &name == parent_name => {
+                        if *depth == 0 {
+                            buffer.push(Section::Block(Block {
+                                name,
+                                attributes: std::mem::take(attributes),
+                                content: Cow::Borrowed(trim_start_newlines_end(
+                                    &input[offset..index],
+                                )),
+                            }));
+
+                            offset = input.len() - remaining.len();
+                            state = State::Root;
+                        } else {
+                            *depth -= 1;
+                        }
+
+                        // Skip start tag check.
+                        continue;
+                    }
+                    _ => { /* Ignore parsing failure & non-matching end tag. */ }
+                }
+
+                match parse_start_tag(&input[index..]) {
+                    Ok((_, (name, _))) if &name == parent_name => {
+                        *depth += 1;
+                    }
+                    _ => { /* Ignore parsing failure & non-matching start tag. */ }
+                }
+            }
+            State::RawText {
+                name: ref parent_name,
+                ref mut attributes,
+            } => {
+                let index = less_than_symbols
+                    .next()
+                    .ok_or_else(|| ParseError::MissingEndTag(parent_name.as_str().to_owned()))?;
+
+                match parse_end_tag(&input[index..]) {
+                    Ok((remaining, name)) if &name == parent_name => {
+                        buffer.push(Section::Block(Block {
+                            name,
+                            attributes: std::mem::take(attributes),
+                            content: Cow::Borrowed(trim_start_newlines_end(&input[offset..index])),
+                        }));
+
+                        offset = input.len() - remaining.len();
+                        state = State::Root;
+                    }
+                    _ => { /* Ignore non-matching end tags. */ }
                 }
             }
         }

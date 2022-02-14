@@ -12,6 +12,10 @@ use nom::{
     IResult, Parser,
 };
 
+pub fn trim_start_newlines_end(input: &str) -> &str {
+    input.trim_start_matches(['\n', '\r']).trim_end()
+}
+
 /// # References
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#tag-open-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#end-tag-open-state>
