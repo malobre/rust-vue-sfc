@@ -33,15 +33,23 @@ impl<'a> AttributeValue<'a> {
     /// Attempts to convert a string to an [`AttributeValue`].
     ///
     /// # Errors
-    /// Will return an error if the string contains both
-    /// a `U+0022 QUOTATION MARK (")` and an `U+0027 APOSTROPHE (')`.
+    /// If the string contains both a `U+0022 QUOTATION MARK (")` and an `U+0027 APOSTROPHE (')`,
+    /// it also cannot contain any of the following characters:
+    /// - `U+0009 CHARACTER TABULATION`
+    /// - `U+000A LINE FEED`
+    /// - `U+000C FORM FEED`
+    /// - `U+0020 SPACE`
+    /// - `U+003E GREATER-THAN SIGN (>)`.
     pub fn from_cow(src: Cow<'a, str>) -> Result<Self, InvalidAttributeValue> {
-        if src.contains('\u{0022}') {
-            if src.contains('\u{0027}') {
-                return Err(InvalidAttributeValue('\u{0027}'));
+        if src.contains('\u{0022}') && src.contains('\u{0027}') {
+            if let Some(ch) = src.chars().find(|ch| {
+                matches!(
+                    ch,
+                    '\u{0009}' | '\u{000A}' | '\u{000C}' | '\u{0020}' | '\u{003E}'
+                )
+            }) {
+                return Err(InvalidAttributeValue(ch));
             }
-
-            return Ok(Self(src));
         }
 
         Ok(Self(src))

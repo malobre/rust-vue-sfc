@@ -53,10 +53,17 @@ fn parse_start_tag_attribute(input: &str) -> IResult<&str, Attribute> {
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#before-attribute-value-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(double-quoted)-state>
 /// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(single-quoted)-state>
+/// - <https://html.spec.whatwg.org/multipage/parsing.html#attribute-value-(unquoted)-state>
 fn parse_start_tag_attribute_value(input: &str) -> IResult<&str, AttributeValue> {
     alt((
         delimited(char('\u{0022}'), take_until("\u{0022}"), char('\u{0022}')),
         delimited(char('\u{0027}'), take_until("\u{0027}"), char('\u{0027}')),
+        take_while1(|ch: char| {
+            !matches!(
+                ch,
+                '\u{0009}' | '\u{000A}' | '\u{000C}' | '\u{0020}' | '\u{003E}'
+            )
+        }),
     ))
     .map(|str| unsafe { AttributeValue::from_cow_unchecked(Cow::Borrowed(str)) })
     .parse(input)
